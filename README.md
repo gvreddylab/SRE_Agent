@@ -1,7 +1,7 @@
 # SRE Agent — Kubernetes Root Cause Analysis Platform
 
 <p align="center">
-  <img src="data/assets/team.png" alt="SRE Team" width="720"/>
+  <img src="data/assets/RCA Image.png" alt="gvreddy's SRE Agent — RCA Dashboard" width="900"/>
 </p>
 
 An autonomous SRE agent that monitors Kubernetes clusters, detects failures, performs structured root cause analysis using a local LLM, generates management-ready reports, and executes remediation actions — all from a conversational UI. No cloud APIs. No data leaves your environment.
