@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/managed-by: rca-agent
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rca-system
+  labels:
+    app.kubernetes.io/managed-by: rca-agent
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-apps
+  labels:
+    app.kubernetes.io/managed-by: rca-agent

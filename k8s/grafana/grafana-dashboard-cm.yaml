@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-rca-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  rca-dashboard.json: |
+    # This file is populated by scripts/deploy-dashboards.sh
+    # Run: kubectl create configmap grafana-rca-dashboard \
+    #        --from-file=rca-dashboard.json=k8s/grafana/rca-dashboard.json \
+    #        -n monitoring --dry-run=client -o yaml | kubectl apply -f -

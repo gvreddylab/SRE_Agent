@@ -1,0 +1,42 @@
+# Demo app that gets OOMKilled — memory limit is intentionally too low.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-oom
+  namespace: demo-apps
+  labels:
+    app: demo-oom
+    scenario: oomkilled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-oom
+  template:
+    metadata:
+      labels:
+        app: demo-oom
+        scenario: oomkilled
+    spec:
+      containers:
+        - name: memory-hog
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              python3 -c "
+              import time
+              data = []
+              print('Allocating memory...')
+              for i in range(1000):
+                  data.append('x' * 1024 * 1024)  # 1 MB chunks
+                  print(f'Allocated {i+1} MB')
+                  time.sleep(0.1)
+              "
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi   # intentionally low — will trigger OOMKill

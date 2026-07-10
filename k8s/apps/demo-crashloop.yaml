@@ -1,0 +1,33 @@
+# Demo app that CrashLoopBackOff's due to a bad command.
+# Used to test the RCA Agent's CrashLoopBackOff detection.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-crashloop
+  namespace: demo-apps
+  labels:
+    app: demo-crashloop
+    scenario: crashloop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-crashloop
+  template:
+    metadata:
+      labels:
+        app: demo-crashloop
+        scenario: crashloop
+    spec:
+      containers:
+        - name: crasher
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args: ["echo 'Starting...'; sleep 2; echo 'ERROR: database connection refused'; exit 1"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi

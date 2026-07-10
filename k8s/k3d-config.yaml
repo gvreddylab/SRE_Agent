@@ -1,0 +1,31 @@
+# k3d cluster configuration for the RCA Agent demo environment.
+#
+# Create cluster:   k3d cluster create --config k8s/k3d-config.yaml
+# Delete cluster:   k3d cluster delete rca-cluster
+
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: rca-cluster
+servers: 1
+agents: 2
+ports:
+  # Expose NodePort range for accessing Prometheus/Grafana from host
+  - port: "9090:30090"    # Prometheus
+    nodeFilters: [loadbalancer]
+  - port: "3000:30300"    # Grafana
+    nodeFilters: [loadbalancer]
+  - port: "8080:30080"    # App ingress
+    nodeFilters: [loadbalancer]
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    extraArgs:
+      # Disable Traefik so we can install our own ingress later
+      - arg: --disable=traefik
+        nodeFilters: [server:*]
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true

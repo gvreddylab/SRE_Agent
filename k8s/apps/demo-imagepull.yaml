@@ -1,0 +1,27 @@
+# Demo app with a non-existent image — triggers ImagePullBackOff.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-imagepull
+  namespace: demo-apps
+  labels:
+    app: demo-imagepull
+    scenario: imagepullbackoff
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-imagepull
+  template:
+    metadata:
+      labels:
+        app: demo-imagepull
+        scenario: imagepullbackoff
+    spec:
+      containers:
+        - name: app
+          image: my-private-registry.example.com/nonexistent:v999.0.0
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
