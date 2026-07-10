@@ -19,14 +19,8 @@ env/
 .env.*
 !.env.example
 
-# SQLite databases (runtime data)
-data/sqlite/*.db
+# Environment / secrets only — data is included
 
-# ChromaDB vector store (runtime data, can be rebuilt)
-data/chroma/
-
-# Generated reports (output artifacts)
-data/reports/
 
 # Logs
 *.log
