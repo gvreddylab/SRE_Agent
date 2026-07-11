@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sre-agent
+  namespace: sre-agent
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sre-agent
+rules:
+  # Read cluster state
+  - apiGroups: [""]
+    resources: [pods, pods/log, nodes, events, namespaces, services, configmaps]
+    verbs: [get, list, watch]
+  # Read deployments / replicasets
+  - apiGroups: [apps]
+    resources: [deployments, replicasets, statefulsets, daemonsets]
+    verbs: [get, list, watch, patch]
+  # Remediation actions
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [delete]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sre-agent
+subjects:
+  - kind: ServiceAccount
+    name: sre-agent
+    namespace: sre-agent
+roleRef:
+  kind: ClusterRole
+  name: sre-agent
+  apiGroup: rbac.authorization.k8s.io

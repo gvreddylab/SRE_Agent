@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sre-agent
+  namespace: sre-agent
+  labels:
+    app: sre-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sre-agent
+  template:
+    metadata:
+      labels:
+        app: sre-agent
+    spec:
+      serviceAccountName: sre-agent
+      containers:
+        - name: sre-agent
+          image: 172.31.80.1:5050/root/sre-agent:latest
+          imagePullPolicy: Always
+          ports:
+            - name: ui
+              containerPort: 8501
+            - name: api
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: sre-agent-config
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 3Gi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: sre-agent-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: sre-agent
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      initContainers:
+        - name: pull-model
+          image: ollama/ollama:latest
+          command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull llama3.1:8b && kill %1"]
+          env:
+            - name: OLLAMA_MODELS
+              value: /models
+          volumeMounts:
+            - name: models
+              mountPath: /models
+          resources:
+            requests:
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+          env:
+            - name: OLLAMA_MODELS
+              value: /models
+            - name: OLLAMA_NUM_THREAD
+              value: "3"
+            - name: OLLAMA_NUM_CTX
+              value: "4096"
+            - name: OLLAMA_KEEP_ALIVE
+              value: "10m"
+          volumeMounts:
+            - name: models
+              mountPath: /models
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 6Gi
+            limits:
+              cpu: 3000m
+              memory: 8Gi
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+  namespace: sre-agent
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
