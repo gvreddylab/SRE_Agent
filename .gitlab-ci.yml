@@ -5,7 +5,7 @@ stages:
 build-image:
   stage: build
   tags:
-    - wsl-shell-runner
+    - wsl
   script:
     - docker build -t sre-agent:latest .
     - k3d image import sre-agent:latest -c lab
@@ -15,7 +15,7 @@ build-image:
 deploy:
   stage: deploy
   tags:
-    - wsl-shell-runner
+    - wsl
   script:
     - kubectl rollout restart deployment/sre-agent -n sre-agent
     - kubectl rollout status deployment/sre-agent -n sre-agent --timeout=120s
