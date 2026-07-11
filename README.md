@@ -195,11 +195,11 @@ k3d cluster create <your-cluster-name> --agents 1
 
 **2. `argocd/application.yaml` — repo URL**
 
-The `repoURL` is hardcoded to the original GitLab instance:
+The `repoURL` is  to the original GitLab instance:
 
 ```yaml
 source:
-  repoURL: http://172.31.80.1/root/sre-agent.git   # ← replace with your GitLab/GitHub URL
+    repoURL: https://<git-server>/<organization>/<repository>.git   # ← replace with your GitLab/GitHub URL
 ```
 
 Set it to wherever you pushed the repo (local GitLab, GitHub, etc.).
