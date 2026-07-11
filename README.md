@@ -93,6 +93,170 @@ On first launch, open the UI → **Sign Up** → create your account.
 
 ---
 
+## Running the Agent
+
+Choose **one** path — local or Kubernetes. Both reach the same UI at the end.
+
+---
+
+### Option 1 — Run Locally
+
+After completing Setup above:
+
+```bash
+# Start both API and UI
+./scripts/start.sh
+```
+
+That's it. Open http://localhost:8501, sign up, and start querying your cluster.
+
+If `start.sh` is unavailable, run manually:
+
+```bash
+source .venv/bin/activate
+
+# Terminal 1 — API
+PYTHONPATH=. uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 — UI
+PYTHONPATH=. streamlit run app/ui/streamlit_app.py --server.port 8501
+```
+
+Your kubeconfig context is used automatically — the agent talks directly to whatever cluster `kubectl` is pointed at.
+
+---
+
+### Option 2 — Run on Kubernetes (Optional)
+
+Requires: `kubectl` with cluster access, `k3d` (if using local cluster), ArgoCD installed.
+
+**Step 1 — Build and import the image**
+
+```bash
+docker build -t sre-agent:latest .
+k3d image import sre-agent:latest -c <your-cluster-name>
+```
+
+**Step 2 — Apply manifests**
+
+```bash
+kubectl apply -f k8s/sre-agent/
+```
+
+This creates the `sre-agent` namespace, RBAC, ConfigMap, PVCs, Deployments, and Services.
+
+**Step 3 — (Optional) Deploy via ArgoCD**
+
+```bash
+kubectl apply -f argocd/application.yaml
+```
+
+ArgoCD will sync `k8s/sre-agent/` from your repo and keep it in sync automatically.
+
+**Step 4 — Access the UI**
+
+NodePort access depends on your cluster network. Use port-forward if NodePort is not reachable:
+
+```bash
+kubectl port-forward svc/sre-agent 8501:8501 -n sre-agent
+```
+
+Then open http://localhost:8501.
+
+**Step 5 — First login**
+
+Open the UI → **Sign Up** → create your account. User data is stored in the PVC and persists across pod restarts.
+
+> **Data persistence:** All data (SQLite DBs, ChromaDB vectors, reports) is stored on the `sre-agent-data` PVC (5Gi). Data survives pod restarts and redeployments. It is only lost if the PVC is explicitly deleted.
+
+---
+
+### Adapting the Pipeline to Your Own Machine
+
+If you cloned this repo and want to run the GitLab CI → k3d → ArgoCD pipeline on your own laptop, change the following before pushing:
+
+**1. `.gitlab-ci.yml` — runner tag and cluster name**
+
+The `tags` value and the k3d cluster name are environment-specific:
+
+```yaml
+# Change this tag to match your registered runner's tag
+tags:
+  - wsl          # ← replace with your runner tag
+
+# Change "lab" to whatever you named your k3d cluster
+- k3d image import sre-agent:latest -c lab    # ← replace "lab"
+```
+
+Create your k3d cluster first:
+```bash
+k3d cluster create <your-cluster-name> --agents 1
+```
+
+**2. `argocd/application.yaml` — repo URL**
+
+The `repoURL` is hardcoded to the original GitLab instance:
+
+```yaml
+source:
+  repoURL: http://172.31.80.1/root/sre-agent.git   # ← replace with your GitLab/GitHub URL
+```
+
+Set it to wherever you pushed the repo (local GitLab, GitHub, etc.).
+
+**3. Register a GitLab runner on your machine**
+
+Use a shell executor so the runner can call `docker` and `kubectl` directly:
+
+```bash
+gitlab-runner register \
+  --url <your-gitlab-url> \
+  --token <your-registration-token> \
+  --executor shell \
+  --description "my-local-runner"
+```
+
+Then in `~/.gitlab-runner/config.toml` ensure the runner's environment has:
+```toml
+environment = [
+  "KUBECONFIG=/home/<your-user>/.kube/config",
+  "HOME=/home/<your-user>",
+  "USER=<your-user>",
+  "DOCKER_HOST=unix:///var/run/docker.sock"
+]
+```
+
+**4. ArgoCD — add your repo as a source**
+
+```bash
+kubectl create secret generic sre-agent-repo \
+  --from-literal=type=git \
+  --from-literal=url=<your-repo-url> \
+  --from-literal=username=<git-user> \
+  --from-literal=password=<git-token> \
+  -n argocd
+
+kubectl label secret sre-agent-repo \
+  argocd.argoproj.io/secret-type=repository \
+  -n argocd
+```
+
+**5. `k8s/sre-agent/configmap.yaml` — only if your Prometheus URL differs**
+
+If you don't have Prometheus, remove or comment out `PROMETHEUS_URL`. Everything else in the ConfigMap works as-is for a k3d deployment.
+
+**Summary of what must change vs what stays the same:**
+
+| File | What to change | What stays the same |
+|---|---|---|
+| `.gitlab-ci.yml` | Runner tag, k3d cluster name | Stage names, script logic |
+| `argocd/application.yaml` | `repoURL` | Path, sync policy, destination |
+| `~/.gitlab-runner/config.toml` | User paths, runner token | Executor type (shell), env var keys |
+| `k8s/sre-agent/configmap.yaml` | `PROMETHEUS_URL` if not installed | All other env vars |
+| Everything else | Nothing | Manifests, Dockerfile, app code |
+
+---
+
 ## Key Configuration
 
 ```bash
