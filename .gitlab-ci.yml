@@ -3,6 +3,8 @@ stages:
 
 build-image:
   stage: build
+  tags:
+    - wsl
   image: docker:24
   services:
     - docker:24-dind
