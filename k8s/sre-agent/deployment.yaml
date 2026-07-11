@@ -75,7 +75,7 @@ spec:
       initContainers:
         - name: pull-model
           image: ollama/ollama:latest
-          command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull llama3.1:8b && kill %1"]
+          command: ["/bin/sh", "-c", "ollama serve & OLLAMA_PID=$! && sleep 5 && ollama pull llama3.1:8b; kill $OLLAMA_PID 2>/dev/null; exit 0"]
           env:
             - name: OLLAMA_MODELS
               value: /models

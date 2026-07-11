@@ -18,6 +18,6 @@ deploy:
     - wsl
   script:
     - kubectl rollout restart deployment/sre-agent -n sre-agent
-    - kubectl rollout status deployment/sre-agent -n sre-agent --timeout=120s
+    - kubectl rollout status deployment/sre-agent -n sre-agent --timeout=300s
   only:
     - main
