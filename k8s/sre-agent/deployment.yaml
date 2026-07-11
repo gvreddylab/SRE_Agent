@@ -18,8 +18,8 @@ spec:
       serviceAccountName: sre-agent
       containers:
         - name: sre-agent
-          image: 172.31.80.1:5050/root/sre-agent:latest
-          imagePullPolicy: Always
+          image: sre-agent:latest
+          imagePullPolicy: Never
           ports:
             - name: ui
               containerPort: 8501
