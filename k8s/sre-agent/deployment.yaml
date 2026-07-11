@@ -40,13 +40,13 @@ spec:
               memory: 3Gi
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /api/v1/analysis/status
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /api/v1/analysis/status
               port: 8000
             initialDelaySeconds: 15
             periodSeconds: 10
